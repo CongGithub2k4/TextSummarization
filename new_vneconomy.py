@@ -13,6 +13,7 @@ from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 import sys
 
+import democraw_1_web
 import demotakelink
 
 # Thiết lập logging
@@ -132,7 +133,7 @@ class NewsScraperVietnam:
                     logging.error(f"Lỗi khi thu thập liên kết từ chuyên mục {category} trang {page}: {str(e)}")
                     time.sleep(random.uniform(5, 10))
 
-        # Loại bỏ các liên kết trùng lặp từ acticle_links: vì nó cạo các link bài tuwf hàng nghìn trang
+        # Loại bỏ các liên kết trùng lặp từ acticle_links: vì nó cạo các link bài từ hàng nghìn trang
         unique_links = []
         unique_urls = set()
         for link in article_links:
@@ -170,94 +171,14 @@ class NewsScraperVietnam:
                     time.sleep(random.uniform(2, 5))
                     continue
 
-                response.encoding = 'utf-8'  # Đảm bảo encoding đúng
-                soup = BeautifulSoup(response.text, 'html.parser')
-
-                # Tiêu đề - cập nhật selector
-                title_selectors = [
-                    'h1.content-detail-title', 'h1.title-detail', 'h1.title',
-                    'h1.vnn-title', 'h1', '.detail-title h1', '.title-detail-wrapper h1'
-                ]
-
-                title = None
-                for selector in title_selectors:
-                    title_elem = soup.select_one(selector)
-                    if title_elem:
-                        title = title_elem.text.strip()
-                        break
-
-                if not title:
-                    logging.warning(f"Không tìm thấy tiêu đề trong {url}")
-                    retry_count += 1
-                    time.sleep(random.uniform(2, 5))
-                    continue
-
-                # Kiểm tra nếu tiêu đề quá ngắn
-                if len(title) < 10:
-                    logging.warning(f"Tiêu đề quá ngắn: {title}")
-                    retry_count += 1
-                    time.sleep(random.uniform(2, 5))
-                    continue
-
-                # Mô tả/Sapo - cập nhật selector
-                description_selectors = [
-                    'h2.content-detail-sapo', 'div.content-detail-sapo', 'p.description',
-                    'div.lead', '.sapo', '.article-sapo', '.detail-sapo', '.detail-lead',
-                    'h2.sapo', '.summary', '.article-summary'
-                ]
-
-                description_text = ""
-                for selector in description_selectors:
-                    description = soup.select_one(selector)
-                    if description:
-                        description_text = description.text.strip()
-                        break
-
-                # Thời gian - cập nhật selector
-                time_selectors = [
-                    'span.content-detail-time', 'span.date', 'div.bread-crumb-detail__time',
-                    '.time', '.time-update', '.detail-time', '.article-time', '.publish-time'
-                ]
-
-                pub_time = ""
-                for selector in time_selectors:
-                    time_element = soup.select_one(selector)
-                    if time_element:
-                        pub_time = time_element.text.strip()
-                        break
-
-                # Nội dung bài viết - cập nhật selector
-                content_selectors = [
-                    'div.content-detail__content p', 'article.fck_detail p:not(.author)',
-                    '.maincontent p', '.detail-content p', '.vnn-content p',
-                    '.article-body p', '.article-content p', '.content p'
-                ]
-
-                content_elements = []
-                for selector in content_selectors:
-                    elements = soup.select(selector)
-                    if elements:
-                        content_elements = elements
-                        break
-
-                content = "\n".join([p.text.strip() for p in content_elements if p.text.strip()])
-
-                # Kiểm tra nếu nội dung quá ngắn
-                if len(content.split()) < 30:
-                    logging.warning(f"Nội dung quá ngắn: {len(content.split())} từ")
-                    retry_count += 1
-                    time.sleep(random.uniform(2, 5))
-                    continue
-
+                detail_summary, detail_content = democraw_1_web.craw1web(response)
                 return {
-                    'title': title,
-                    'summary': description_text,
-                    'content': content,
-                    'pub_date': pub_time,
                     'category': category,
                     'url': url,
-                    'source': 'vietnamnet',
-                    'scraped_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    'source': 'vneconomy',
+                    'scraped_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    'summary': detail_summary,
+                    'content': detail_content
                 }
             except requests.exceptions.RequestException as e:
                 retry_count += 1
@@ -275,7 +196,7 @@ class NewsScraperVietnam:
     def _save_raw_article(self, article_data):
         """Lưu dữ liệu thô của một bài viết"""
         try:
-            filename = f"{article_data['source']}_{int(time.time())}_{random.randint(1000, 9999)}.json"
+            filename = f"{article_data['source']}_{int(time.time())}_{article_data['category']}.json"
             with open(os.path.join(self.output_dir, "raw", filename), 'w', encoding='utf-8') as f:
                 json.dump(article_data, f, ensure_ascii=False, indent=2)
         except Exception as e:
@@ -481,14 +402,7 @@ class NewsScraperVietnam:
         # Thu thập dữ liệu từ các nguồn tin tức
         self.scrape_vietnamnet(num_pages=pages_per_source)
 
-        # # Kiểm tra số lượng bài viết đã thu thập
-        # if len(self.data) < target_count:
-        #     self.scrape_tuoitre(num_pages=pages_per_source)
-
-        # # Kiểm tra lại
-        # if len(self.data) < target_count:
-        #     self.scrape_thanhnien(num_pages=pages_per_source)
-
+        '''
         # Tiền xử lý dữ liệu
         self.preprocess_data()
 
@@ -497,7 +411,7 @@ class NewsScraperVietnam:
 
         # Chia tập dữ liệu
         self.split_dataset()
-
+        '''
         end_time = time.time()
         logging.info(f"Đã hoàn thành toàn bộ quá trình trong {(end_time - start_time) / 60:.2f} phút")
         logging.info(f"Tổng số bài viết đã thu thập: {len(self.data)}")
