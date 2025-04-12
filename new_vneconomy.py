@@ -59,7 +59,7 @@ class NewsScraperVietnam:
     Truy cập từng chủ đề, mỗi chủ đề báo có nhiều trang nên ta phải truy lùng twufng chủ đề và từng trang
     '''
 
-    def scrape_vietnamnet(self, num_pages=200):
+    def scrape_vietnamnet(self, num_pages):
         """Thu thập dữ liệu từ Vietnamnet"""
         logging.info("Bắt đầu thu thập dữ liệu từ Vietnamnet")
         article_links = []
@@ -73,17 +73,17 @@ class NewsScraperVietnam:
 
         try:
             # Kiểm tra kết nối internet
-            response = self.session.get("https://vietnamnet.vn", timeout=10, headers=self.headers)
+            response = self.session.get("https://vneconomy.vn", timeout=10, headers=self.headers)
             if response.status_code != 200:
-                logging.error(f"Không thể kết nối đến Vietnamnet: Mã trạng thái {response.status_code}")
+                logging.error(f"Không thể kết nối đến Vneconomy: Mã trạng thái {response.status_code}")
                 return
-            logging.info("Kết nối thành công đến vietnamnet.vn")
+            logging.info("Kết nối thành công đến vneconomy.vn")
         except requests.exceptions.RequestException as e:
-            logging.error(f"Không thể kết nối đến Vietnamnet: {str(e)}")
+            logging.error(f"Không thể kết nối đến Vneconomy: {str(e)}")
             return
 
         for category in categories:
-            for page in range(1, num_pages + 1):
+            for page in range(3, num_pages + 1):
                 try:
                     # Thử nhiều cấu trúc URL khác nhau
                     urls_to_try = [
@@ -144,18 +144,18 @@ class NewsScraperVietnam:
         logging.info(f"Tổng số liên kết duy nhất: {len(unique_links)}")
 
         # Thu thập nội dung từ các liên kết
-        for article_info in tqdm(unique_links, desc="Thu thập bài viết vietnamnet"):
+        for article_info in tqdm(unique_links, desc="Thu thập bài viết vneconomy"):
             try:
                 article_data = self._scrape_vietnamnet_article(article_info['url'], article_info['category'])
                 if article_data:
-                    self.data.append(article_data)
+                    #self.data.append(article_data)
                     # Lưu dữ liệu thô
                     self._save_raw_article(article_data)
                     time.sleep(random.uniform(1, 3))
             except Exception as e:
                 logging.error(f"Lỗi khi thu thập bài viết từ {article_info['url']}: {str(e)}")
 
-        logging.info(f"Đã hoàn thành thu thập dữ liệu từ Vietnamnet: {len(self.data)} bài viết")
+        logging.info(f"Đã hoàn thành thu thập dữ liệu từ Vneconomy: {len(self.data)} bài viết")
 
     def _scrape_vietnamnet_article(self, url, category):
         """Thu thập thông tin từ một bài viết Vietnamnet"""
@@ -171,7 +171,7 @@ class NewsScraperVietnam:
                     time.sleep(random.uniform(2, 5))
                     continue
 
-                detail_summary, detail_content = democraw_1_web.craw1web(response)
+                [detail_summary, detail_content] = democraw_1_web.craw1web(response)
                 return {
                     'category': category,
                     'url': url,
@@ -394,7 +394,7 @@ class NewsScraperVietnam:
         except Exception as e:
             logging.error(f"Lỗi trong quá trình chia tập dữ liệu: {str(e)}")
 
-    def run_scraper(self, target_count=5000, pages_per_source=50):
+    def run_scraper(self, target_count=5000, pages_per_source=200):
         """Chạy toàn bộ quá trình thu thập và xử lý dữ liệu"""
         start_time = time.time()
         logging.info(f"Bắt đầu quá trình thu thập dữ liệu với mục tiêu {target_count} bài viết")
@@ -420,6 +420,7 @@ class NewsScraperVietnam:
 # Khởi chạy scraper
 if __name__ == "__main__":
     try:
+        '''
         # Kiểm tra Python version
         if sys.version_info[0] < 3:
             raise Exception("Yêu cầu Python 3 trở lên")
@@ -437,9 +438,9 @@ if __name__ == "__main__":
             print(f"Vui lòng cài đặt các thư viện sau: {', '.join(missing_packages)}")
             print("Sử dụng lệnh: pip install -r requirements.txt")
             sys.exit(1)
-
+        '''
         scraper = NewsScraperVietnam()
-        scraper.run_scraper(target_count=5000, pages_per_source=5)
+        scraper.run_scraper(target_count=5000, pages_per_source=200)
 
     except KeyboardInterrupt:
         print("\nĐã dừng chương trình theo yêu cầu của người dùng")

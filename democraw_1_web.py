@@ -8,24 +8,12 @@ from bs4 import BeautifulSoup
 def craw1web(response):
     response.encoding = 'utf-8'  # Đảm bảo encoding đúng
     soup = BeautifulSoup(response.text, 'html.parser')
-    soup = BeautifulSoup(response, 'html.parser')
 
     detail_summary = soup.find('h2', class_='detail__summary')
     detail_content = soup.find('div', class_='detail__content')
-
-    return detail_summary, detail_content
-
+    print(detail_summary.text)
+    print(detail_content.text)
+    return [detail_summary.get_text(), detail_content.get_text()]
 
 if __name__ == '__main__':
-    htmlpage = requests.get(
-        'https://vneconomy.vn/dieu-chinh-thue-tieu-thu-dac-biet-voi-bia-ruou-can-xem-xet-than-trong-toan-dien.htm')
-    data = BeautifulSoup(htmlpage.text, 'html.parser')
-
-    detail_summary = data.find('h2', class_='detail__summary')
-    detail_content = data.find('div', class_='detail__content')
-
-    print(detail_content.getText())
-    # print(detail_summary.getText())
-
-    lst = re.split(r"(\s)*\.(\n)*", detail_content.get_text())
-    print(*lst, sep='\n')
+    craw1web(requests.get('https://vneconomy.vn/bo-ngoai-giao-quyet-dinh-ap-thue-quan-cua-my-voi-hang-hoa-viet-nam-chua-phu-hop-voi-thuc-te-hop-tac-giua-hai-nuoc.htm'))

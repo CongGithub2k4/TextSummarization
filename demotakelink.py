@@ -14,7 +14,7 @@ def craw(response):
     unique_links = list(set(filtered_links))
     return unique_links
 if __name__ == '__main__':
-    htmlpage = requests.get('https://vneconomy.vn/tai-chinh.htm?trang=3')
+    htmlpage = requests.get('https://vneconomy.vn/dia-oc.htm?trang=27')
     soup = BeautifulSoup(htmlpage.text, 'html.parser')
     soup = soup.find(class_='zone zone--featured')
 
