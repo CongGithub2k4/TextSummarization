@@ -1,0 +1,6 @@
+Vì vài file có dung lượng Qúa lớn, hoặc như file .ipynb cần token đăng nhập hugging face nên ta cần thêm
+Nó vào .gitignore
+Khi add . thì: git add .gitignore
+rồi phải git
+git rm --cached -r data/
+git rm --cached -r data_vtv/raw/
